@@ -44,7 +44,7 @@ books_schema = BookSchema(many=True)
 # routing
 class AllBooks(Resource):
     def get(self):
-        book_obj = Book.query.all()
+        book_obj = Book.query.order_by(Book.id).all()
         return books_schema.dump(book_obj)
     
     def post(self):
@@ -79,6 +79,16 @@ class PerticularBook(Resource):
     def delete(self , pk):
         book_obj = self.get_obj(pk)
         db.session.delete(book_obj)
+        db.session.commit()
+
+        return book_schema.dump(book_obj)
+        
+    def patch(self , pk):
+        book_obj = self.get_obj(pk)
+        if request.json.get("name"):
+            book_obj.name = request.json["name"]
+        if request.json.get("author"):
+            book_obj.author = request.json["author"]
         db.session.commit()
 
         return book_schema.dump(book_obj)
