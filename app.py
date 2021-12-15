@@ -1,8 +1,10 @@
 import datetime
+from functools import partial
 from flask import Flask , request 
 from flask_restful import Resource, Api
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
+import json
 
 
 app = Flask(__name__)
@@ -34,6 +36,8 @@ class BookSchema(ma.SQLAlchemySchema):
     class Meta:
         model = Book
         fields = ("id", "name", "author" , "created")
+        load_instance = True
+
 
 
 # inicialize
@@ -48,9 +52,7 @@ class AllBooks(Resource):
         return books_schema.dump(book_obj)
     
     def post(self):
-        name = request.json["name"]
-        author = request.json["author"]
-        book_obj = Book(name = name , author = author)
+        book_obj = BookSchema().load(request.json)
         db.session.add(book_obj)
         db.session.commit()
 
@@ -67,11 +69,8 @@ class PerticularBook(Resource):
         return book_schema.dump(book_obj)
     
     def put(self , pk):
-        book_obj = self.get_obj(pk)
-        name = request.json["name"]
-        author = request.json["author"]
-        book_obj.name = name
-        book_obj.author = author
+        obj = self.get_obj(pk)
+        book_obj = BookSchema().load(request.json , instance=obj )
         db.session.commit()
 
         return book_schema.dump(book_obj)
@@ -84,11 +83,8 @@ class PerticularBook(Resource):
         return book_schema.dump(book_obj)
         
     def patch(self , pk):
-        book_obj = self.get_obj(pk)
-        if request.json.get("name"):
-            book_obj.name = request.json["name"]
-        if request.json.get("author"):
-            book_obj.author = request.json["author"]
+        obj = self.get_obj(pk)
+        book_obj = BookSchema().load(request.json , instance=obj )
         db.session.commit()
 
         return book_schema.dump(book_obj)
